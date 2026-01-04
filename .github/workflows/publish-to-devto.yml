@@ -24,7 +24,7 @@ jobs:
       
       - name: Install dependencies
         run: |
-          pip install requests
+          pip install -r .github/scripts/requirements.txt
       
       - name: Publish to Dev.to
         env:
