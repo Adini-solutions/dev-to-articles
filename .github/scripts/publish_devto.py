@@ -2,7 +2,15 @@ import os
 import json
 import requests
 import subprocess
+import logging
 from pathlib import Path
+
+# Configurar logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 DEVTO_API_URL = "https://dev.to/api/articles"
@@ -44,6 +52,7 @@ def get_api_key_for_author(author_slug: str) -> str:
 
 def notify_discord(url: str, author: str):
     if not DISCORD_WEBHOOK_URL:
+        logger.warning("Discord webhook URL no configurada")
         return
     try:
         requests.post(
@@ -51,8 +60,9 @@ def notify_discord(url: str, author: str):
             json={"content": f"📢 Nuevo artículo de **{author}** en Dev.to: {url}"}, 
             timeout=10
         )
+        logger.info("Discord notification sent successfully")
     except Exception as e:
-        print(f"Discord notification failed: {e}")
+        logger.error(f"Discord notification failed: {e}")
 
 def find_changed_article():
     result = subprocess.run(
@@ -60,11 +70,26 @@ def find_changed_article():
         capture_output=True,
         text=True
     )
-    for file in result.stdout.split("\n"):
+    
+    logger.info(f"Git diff output:\n{result.stdout}")
+    if result.stderr:
+        logger.warning(f"Git diff stderr:\n{result.stderr}")
+    
+    changed_files = [f for f in result.stdout.strip().split("\n") if f]
+    logger.info(f"Changed files count: {len(changed_files)}")
+    
+    for file in changed_files:
+        logger.debug(f"Checking file: '{file}'")
         if file.endswith(".md") and "/articles/" in file:
             article_path = Path(file)
+            logger.info(f"Found potential article: {article_path}")
             if article_path.exists():
+                logger.info(f"Article exists: {article_path}")
                 return article_path
+            else:
+                logger.warning(f"Article path doesn't exist: {article_path}")
+    
+    logger.warning("No article found matching criteria")
     return None
 
 def load_metadata(article_path: Path) -> dict:
@@ -77,16 +102,19 @@ def load_metadata(article_path: Path) -> dict:
 def publish_article(article_path: Path):
     # Extraer autor del path
     author_slug = extract_author_from_path(article_path)
-    print(f"Detected author: {author_slug}")
+    logger.info(f"Detected author: {author_slug}")
     
     # Obtener API key correspondiente
     api_key = get_api_key_for_author(author_slug)
+    logger.info(f"API key loaded for author: {author_slug}")
     
     # Body del artículo
     body_markdown = article_path.read_text(encoding="utf-8")
+    logger.info(f"Article content loaded, length: {len(body_markdown)} chars")
 
     # Metadata asociada
     meta = load_metadata(article_path)
+    logger.info(f"Metadata loaded: {meta.get('title')}")
 
     # Tags (pueden venir como string o lista)
     tags = meta.get("tags", "")
@@ -96,6 +124,7 @@ def publish_article(article_path: Path):
     # Imagen principal desde banner_path
     banner_path = meta.get("banner_path")
     main_image = f"{RAW_BASE}/{banner_path}" if banner_path else None
+    logger.info(f"Main image URL: {main_image}")
 
     payload = {
         "article": {
@@ -114,25 +143,27 @@ def publish_article(article_path: Path):
         "Content-Type": "application/json"
     }
 
+    logger.info("Sending request to Dev.to API...")
     response = requests.post(DEVTO_API_URL, json=payload, headers=headers, timeout=10)
 
     if response.status_code == 201:
         url = response.json().get("url")
-        print(f"Article published: {url}")
+        logger.info(f"Article published successfully: {url}")
         notify_discord(url, author_slug)
     else:
-        print(f"Error: {response.status_code} - {response.text}")
+        logger.error(f"API Error: {response.status_code} - {response.text}")
         raise SystemExit(1)
 
 if __name__ == "__main__":
     try:
+        logger.info("Starting Dev.to publish script")
         article = find_changed_article()
         if article:
-            print(f"Publishing: {article}")
+            logger.info(f"Publishing article: {article}")
             publish_article(article)
         else:
-            print("No article found or file doesn't exist")
+            logger.error("No article found or file doesn't exist")
             raise SystemExit(1)
     except Exception as e:
-        print(f"Fatal error: {e}")
+        logger.exception(f"Fatal error: {e}")
         raise SystemExit(1)
