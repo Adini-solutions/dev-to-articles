@@ -25,16 +25,16 @@ AUTHOR_API_KEYS = {
 
 def extract_author_from_path(article_path: Path) -> str:
     """
-    Extrae el author_slug del path: dev-to-articles/{author}/{year}/article/
+    Extrae el author_slug del path: {author}/{year}/article/file.md
     """
     parts = article_path.parts
-    try:
-        # Busca 'dev-to-articles' y toma el siguiente elemento
-        articles_idx = parts.index("dev-to-articles")
-        author_slug = parts[articles_idx + 1]
+    if len(parts) >= 3:
+        # El primer elemento del path es el author_slug
+        author_slug = parts[0]
+        logger.info(f"Extracted author from path: {author_slug}")
         return author_slug
-    except (ValueError, IndexError):
-        raise ValueError(f"No se pudo extraer el autor del path: {article_path}")
+    else:
+        raise ValueError(f"Path inválido, se esperaba author/year/article/file.md: {article_path}")
 
 def get_api_key_for_author(author_slug: str) -> str:
     """
