@@ -80,7 +80,8 @@ def find_changed_article():
     
     for file in changed_files:
         logger.debug(f"Checking file: '{file}'")
-        if file.endswith(".md") and "/articles/" in file:
+        # Busca archivos .md que estén en la estructura author/year/article/
+        if file.endswith(".md") and file.count("/") >= 3:
             article_path = Path(file)
             logger.info(f"Found potential article: {article_path}")
             if article_path.exists():
