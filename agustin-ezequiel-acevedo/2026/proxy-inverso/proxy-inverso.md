@@ -23,17 +23,41 @@ La implementación de un proxy inverso ofrece una serie de ventajas y beneficios
 ## Implementación de Proxy Inversos en Arquitecturas Contenerizadas
 La implementación de un proxy inverso en arquitecturas contenerizadas requiere una solución que se integre de manera fluida con las tecnologías de contenedorización, como Docker y Kubernetes. Traefik es una opción atractiva para la implementación de proxy inversos en entornos contenerizados, ya que ofrece una amplia gama de características y funcionalidades que facilitan la gestión y configuración de proxy inversos.
 
-```bash
+```YAML
 # Ejemplo de configuración de Traefik en Docker
-version: '3'
 services:
   traefik:
-    image: traefik:v2.2
+    image: "traefik:v3.4"
+    container_name: "traefik"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=proxy"
+      - "--entryPoints.web.address=:80"
     ports:
       - "80:80"
+      - "8080:8080"
     volumes:
-      - ./traefik.yml:/etc/traefik/traefik.yml
-    command: --configFile=/etc/traefik/traefik.yml
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  whoami:
+    image: "traefik/whoami"
+    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.rule=Host(`whoami.docker.localhost`)"
+      - "traefik.http.routers.whoami.entrypoints=web"
+
+networks:
+  proxy:
+    name: proxy
 ```
 
 ## Conclusión
