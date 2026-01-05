@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 DEVTO_API_URL = "https://dev.to/api/articles"
-RAW_BASE = "https://raw.githubusercontent.com/adini/dev-to-articles/main"
+RAW_BASE = "https://github.com/Adini-solutions/dev-to-articles/blob/main"
+
 
 # Mapeo de author_slug a nombre de variable de entorno
 AUTHOR_API_KEYS = {
@@ -81,7 +82,7 @@ def find_changed_article():
     for file in changed_files:
         logger.debug(f"Checking file: '{file}'")
         # Busca archivos .md que estén en la estructura author/year/article/
-        if file.endswith(".md") and file.count("/") >= 3:
+        if file.endswith(".md") and file.count("/") >= 2:
             article_path = Path(file)
             logger.info(f"Found potential article: {article_path}")
             if article_path.exists():
@@ -124,7 +125,7 @@ def publish_article(article_path: Path):
 
     # Imagen principal desde banner_path
     banner_path = meta.get("banner_path")
-    main_image = f"{RAW_BASE}/{banner_path}" if banner_path else None
+    main_image = f"{RAW_BASE}/{banner_path}?raw=true" if banner_path else None
     logger.info(f"Main image URL: {main_image}")
 
     payload = {
