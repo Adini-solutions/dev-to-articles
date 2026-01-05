@@ -149,7 +149,9 @@ def publish_article(article_path: Path):
     response = requests.post(DEVTO_API_URL, json=payload, headers=headers, timeout=10)
 
     if response.status_code == 201:
-        url = response.json().get("url")
+        article_data = response.json()
+        logger.info(f"Full API response: {article_data}")
+        url = article_data.get("url")
         logger.info(f"Article published successfully: {url}")
         notify_discord(url, author_slug)
     else:
