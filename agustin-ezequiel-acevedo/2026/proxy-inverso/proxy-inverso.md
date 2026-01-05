@@ -21,7 +21,7 @@ La implementación de un proxy inverso ofrece una serie de ventajas y beneficios
 * SSL/TLS: los proxy inversos pueden manejar la negociación de conexiones seguras, lo que protege la integridad y la confidencialidad de los datos.
 
 ## Implementación de Proxy Inversos en Arquitecturas Contenerizadas
-La implementación de un proxy inverso en arquitecturas contenerizadas requiere una solución que se integre de manera fluida con las tecnologías de contenedorización, como Docker y Kubernetes. Traefik es una opción atractiva para la implementación de proxy inversos en entornos contenerizados, ya que ofrece una amplia gama de características y funcionalidades que facilitan la gestión y configuración de proxy inversos.
+La implementación de un proxy inverso en arquitecturas contenerizadas requiere una solución que se integre de manera fluida con las tecnologías de contenedorización, como Docker y Kubernetes. [Traefik](https://traefik.io) es una opción atractiva para la implementación de proxy inversos en entornos contenerizados, ya que ofrece una amplia gama de características y funcionalidades que facilitan la gestión y configuración de proxy inversos.
 
 ```YAML
 # Ejemplo de configuración de Traefik en Docker
