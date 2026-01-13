@@ -14,8 +14,7 @@ logger = logging.getLogger(__name__)
 
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 DEVTO_API_URL = "https://dev.to/api/articles"
-RAW_BASE = "https://github.com/Adini-solutions/dev-to-articles/blob/main"
-
+RAW_BASE = "https://raw.githubusercontent.com/Adini-solutions/dev-to-articles/main"
 
 # Mapeo de author_slug a nombre de variable de entorno
 AUTHOR_API_KEYS = {
@@ -121,11 +120,14 @@ def publish_article(article_path: Path):
     # Tags (pueden venir como string o lista)
     tags = meta.get("tags", "")
     if isinstance(tags, list):
-        tags = ",".join(tags)
-
+        tags = " ".join(tags)
+    else:
+        tags = tags.replace(",", " ").strip()
+    logger.info(f"Tags formatted: '{tags}'")
+    
     # Imagen principal desde banner_path
     banner_path = meta.get("banner_path")
-    main_image = f"{RAW_BASE}/{banner_path}?raw=true" if banner_path else None
+    main_image = f"{RAW_BASE}/{banner_path}" if banner_path else None
     logger.info(f"Main image URL: {main_image}")
 
     payload = {
