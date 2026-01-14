@@ -118,12 +118,31 @@ def publish_article(article_path: Path):
     logger.info(f"Metadata loaded: {meta.get('title')}")
 
     # Tags (pueden venir como string o lista)
-    tags = meta.get("tags", "")
-    if isinstance(tags, list):
-        tags = " ".join(tags)
+    # Normalizar tags (acepta string con comas o lista). Deduplicar y limitar a 4.
+    tags_field = meta.get("tags", "")
+    if isinstance(tags_field, list):
+        tag_list = [t.strip() for t in tags_field if t and t.strip()]
+    elif isinstance(tags_field, str):
+        if "," in tags_field:
+            tag_list = [t.strip() for t in tags_field.split(",") if t.strip()]
+        else:
+            tag_list = [t.strip() for t in tags_field.split() if t.strip()]
     else:
-        tags = tags.replace(",", " ").strip()
-    logger.info(f"Tags formatted: '{tags}'")
+        tag_list = []
+
+    # Normalizar a lowercase, deduplicar preservando orden y limitar a 4
+    seen = set()
+    normalized = []
+    for t in tag_list:
+        tl = t.lower()
+        if tl not in seen:
+            seen.add(tl)
+            normalized.append(tl)
+    normalized = normalized[:4]
+
+    # Enviar como lista: ["tag1", "tag2", ...]
+    tags_list = normalized
+    logger.info(f"Tags normalized (list): {tags_list}")
     
     # Imagen principal desde banner_path
     banner_path = meta.get("banner_path")
@@ -135,12 +154,13 @@ def publish_article(article_path: Path):
             "title": meta.get("title", "Sin título"),
             "body_markdown": body_markdown,
             "published": False,
-            "tags": tags,
+            "tags": tags_list,
             "main_image": main_image,
             "description": "",
             "organization_id": 12123,
         }
     }
+    logger.info(f"Outgoing payload: {json.dumps(payload, ensure_ascii=False)}")
 
     headers = {
         "api-key": api_key,
